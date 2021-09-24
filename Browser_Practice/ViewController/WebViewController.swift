@@ -8,11 +8,15 @@
 import UIKit
 import WebKit
 
-class ViewController: UIViewController{
-
+class WebViewController: UIViewController{
+    
+    weak var delegate: CollectionViewController?
+    var index: Int?
+    
     let screenSize: CGRect = UIScreen.main.bounds
     lazy var searchBar : UISearchBar = UISearchBar(frame: CGRect(x: 0, y: 0, width: screenSize.width - 30, height: 20))
     let webView = WKWebView()
+    var refreshController: UIRefreshControl = UIRefreshControl()
     
     var items = [UIBarButtonItem]()
     
@@ -37,6 +41,11 @@ class ViewController: UIViewController{
         return button
     }()
     
+    lazy var tabButton: UIBarButtonItem = {
+        let button = UIBarButtonItem(image: self.resizedImage(at: "tabs", for: CGSize(width: 24, height: 24)), style: .plain, target: self, action: #selector(handleTabs))
+        return button
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
@@ -58,9 +67,13 @@ class ViewController: UIViewController{
         
         
         
-        items = [backButton, fixSpace, forwardButton, flexibleSpace]
+        items = [backButton, fixSpace, forwardButton, flexibleSpace, tabButton]
         
         self.setToolbarItems(items, animated: false)
+        
+        refreshController.bounds = CGRect(x: 0, y: 50, width: refreshController.bounds.size.width, height: refreshController.bounds.size.height)
+        refreshController.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
+        webView.scrollView.addSubview(refreshController)
     }
 
     override func viewDidLayoutSubviews() {
@@ -70,7 +83,7 @@ class ViewController: UIViewController{
     
 }
 
-extension ViewController: UIScrollViewDelegate{
+extension WebViewController: UIScrollViewDelegate{
     func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
 
         if(velocity.y>0) {
@@ -90,7 +103,7 @@ extension ViewController: UIScrollViewDelegate{
        }
 }
 
-extension ViewController: WKNavigationDelegate{
+extension WebViewController: WKNavigationDelegate{
     
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
         UIApplication.shared.isNetworkActivityIndicatorVisible = true
@@ -111,7 +124,7 @@ extension ViewController: WKNavigationDelegate{
 }
 
 
-extension ViewController: UISearchBarDelegate{
+extension WebViewController: UISearchBarDelegate{
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         guard let text = searchBar.text, let url = URL.parseString(withString: text) else {
             return
@@ -135,7 +148,7 @@ extension ViewController: UISearchBarDelegate{
 }
 
 
-extension ViewController{
+extension WebViewController{
     
     func resizedImage(at named: String, for size: CGSize) -> UIImage? {
         guard let image = UIImage(named: named) else {
@@ -156,5 +169,32 @@ extension ViewController{
     @objc func handleForwardButtonPress(_ sender: UIBarButtonItem) {
         webView.stopLoading()
         webView.goForward()
+    }
+    
+    @objc func handleRefresh(_ refresh:UIRefreshControl){
+        webView.reload()
+        refresh.endRefreshing()
+    }
+    
+    @objc func handleTabs(_ sender: UIBarButtonItem){
+        let config = WKSnapshotConfiguration()
+        config.rect = CGRect(x: 0, y: 0, width: screenSize.width / 2, height: 300)
+
+        webView.takeSnapshot(with: nil) { [unowned self] image, error in
+            if let image = image {
+                let data = WebData()
+                data.vc = self
+                data.image = image
+                if self.index! == delegate?.tabs.count{
+                    delegate?.tabs.append(data)
+                }
+                else{
+                    delegate?.tabs[index!].image = image
+                }
+                delegate?.collectionView.reloadData()
+                self.dismiss(animated: true, completion: nil)
+            }
+        }
+        
     }
 }
