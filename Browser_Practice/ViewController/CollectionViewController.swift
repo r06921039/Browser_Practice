@@ -78,7 +78,9 @@ class CollectionViewController: UICollectionViewController, UICollectionViewDele
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as! WebViewCell
         cell.imageView.image = tabs[indexPath.row].image
         cell.vc = tabs[indexPath.row].vc
-        
+        tabs[indexPath.row].vc?.index = indexPath.row
+        cell.delegate = self
+        cell.index = indexPath
         // Configure the cell
         
         return cell
@@ -142,5 +144,12 @@ extension CollectionViewController{
         navVC.modalPresentationStyle = .fullScreen
         navVC.setToolbarHidden(false, animated: false)
         present(navVC, animated: true, completion: nil)
+    }
+}
+
+extension CollectionViewController: CollectionDataProtocol{
+    func deleteData(index: Int) {
+        tabs.remove(at: index)
+        collectionView.reloadData()
     }
 }

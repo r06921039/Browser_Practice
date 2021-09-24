@@ -74,6 +74,7 @@ class WebViewController: UIViewController{
         refreshController.bounds = CGRect(x: 0, y: 50, width: refreshController.bounds.size.width, height: refreshController.bounds.size.height)
         refreshController.addTarget(self, action: #selector(handleRefresh), for: .valueChanged)
         webView.scrollView.addSubview(refreshController)
+        
     }
 
     override func viewDidLayoutSubviews() {
@@ -112,13 +113,13 @@ extension WebViewController: WKNavigationDelegate{
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         UIApplication.shared.isNetworkActivityIndicatorVisible = false
-        
     }
     
     private func refreshNavigationControls() {
         backButton.isEnabled = webView.canGoBack
         forwardButton.isEnabled = webView.canGoForward
         searchBar.text = webView.url?.absoluteString
+        
     }
     
 }
